@@ -10,7 +10,10 @@ import zipfile
 
 
 def paths(patterns, root=""):
-	globbed = [glob2.glob(os.path.join(root, pattern), include_hidden=True) for pattern in patterns]
+	globbed = [glob2.glob(
+		os.path.join(root, pattern),
+		include_hidden=True
+	) for pattern in patterns]
 	return [path for paths in globbed for path in paths if not os.path.isdir(path)]
 
 
@@ -28,9 +31,9 @@ def deploy():
 
 	# Parse arguments:
 	parser = argparse.ArgumentParser(add_help=False)
-	parser.add_argument("-c", "--config", default="deploy.yaml", help="Path to the config file.")
-	parser.add_argument("-n", "--name", help="Name of the Lambda function.")
-	parser.add_argument("-h", "--help", action="help", help="Show this help message.")
+	parser.add_argument("-c", "--config", default="deploy.yaml")
+	parser.add_argument("-n", "--name")
+	parser.add_argument("-h", "--help")
 	args = parser.parse_args()
 
 	config = yaml.safe_load(open(args.config, "r"))
@@ -39,7 +42,8 @@ def deploy():
 
 	# Retrieve a list of existing functions names:
 	lambda_ = boto3.client("lambda")
-	existing = [function["FunctionName"] for function in lambda_.list_functions()["Functions"]]
+	functions = lambda_.list_functions()["Functions"]
+	existing = [function["FunctionName"] for function in functions]
 
 	for name, function in functions.items():
 		if name not in existing:
@@ -50,7 +54,12 @@ def deploy():
 				Handler=function["handler"],
 				Environment={"Variables": function.get("env", {})},
 				Layers=function.get("layers", []),
-				Code={"ZipFile": package(function["includes"], function.get("excludes", [])).getvalue()}
+				Timeout=function.get("timeout", 3), # Lambda default timeout is 3 seconds.
+				MemorySize=function.get("memory", 128), # Lambda default memory size is 128 MB.
+				Code={"ZipFile": package(
+					function["includes"],
+					function.get("excludes", [])
+				).getvalue()}
 			)
 			print(f"✅ \x1b[1;32m{name}\x1b[0m")
 		else:
@@ -61,17 +70,24 @@ def deploy():
 				Handler=function["handler"],
 				Environment={"Variables": function.get("env", {})},
 				Layers=function.get("layers", [])
+				Timeout=function.get("timeout", 3), # Lambda default timeout is 3 seconds.
+				MemorySize=function.get("memory", 128), # Lambda default memory size is 128 MB.
 			)
 			lambda_.update_function_code(
 				FunctionName=name,
-				ZipFile=package(function["includes"], function.get("excludes", [])).getvalue()
+				ZipFile=package(
+					function["includes"],
+					function.get("excludes", [])
+				).getvalue()
 			)
 			print(f"✅ {name}")
 
 
 yaml.SafeLoader.add_constructor(
 	"!include",
-	lambda loader, node: yaml.safe_load(open(os.path.join(os.path.dirname(loader.name), node.value), "r"))
+	lambda loader, node: yaml.safe_load(
+		open(os.path.join(os.path.dirname(loader.name), node.value), "r")
+	)
 )
 
 if __name__ == "__main__":
