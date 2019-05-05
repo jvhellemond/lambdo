@@ -69,7 +69,7 @@ def deploy():
 				Runtime=function["runtime"],
 				Handler=function["handler"],
 				Environment={"Variables": function.get("env", {})},
-				Layers=function.get("layers", [])
+				Layers=function.get("layers", []),
 				Timeout=function.get("timeout", 3), # Lambda default timeout is 3 seconds.
 				MemorySize=function.get("memory", 128), # Lambda default memory size is 128 MB.
 			)
