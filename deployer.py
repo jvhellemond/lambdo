@@ -42,8 +42,8 @@ def deploy():
 
 	# Retrieve a list of existing functions names:
 	lambda_ = boto3.client("lambda")
-	functions = lambda_.list_functions()["Functions"]
-	existing = [function["FunctionName"] for function in functions]
+	functions_ = lambda_.list_functions()["Functions"]
+	existing = [function["FunctionName"] for function in functions_]
 
 	for name, function in functions.items():
 		if name not in existing:
