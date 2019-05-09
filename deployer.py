@@ -33,6 +33,7 @@ def deploy():
 	parser = argparse.ArgumentParser(add_help=False)
 	parser.add_argument("-c", "--config", default="deploy.yaml")
 	parser.add_argument("-n", "--name")
+	parser.add_argument("-d", "--dryrun", dest="dryrun", action="store_true")
 	parser.add_argument("-h", "--help")
 	args = parser.parse_args()
 
@@ -46,7 +47,15 @@ def deploy():
 	existing = [function["FunctionName"] for function in functions_]
 
 	for name, function in functions.items():
-		if name not in existing:
+
+		code = package(
+			function["includes"],
+			function.get("excludes", [])
+		).getvalue()
+
+		if args.dryrun:
+			print(f"📦 \x1b[2m{name}\x1b[0m")
+		elif name not in existing:
 			lambda_.create_function(
 				FunctionName=name,
 				Role=function["role"],
@@ -56,12 +65,9 @@ def deploy():
 				Layers=function.get("layers", []),
 				Timeout=function.get("timeout", 3), # Lambda default timeout is 3 seconds.
 				MemorySize=function.get("memory", 128), # Lambda default memory size is 128 MB.
-				Code={"ZipFile": package(
-					function["includes"],
-					function.get("excludes", [])
-				).getvalue()}
+				Code={"ZipFile": code}
 			)
-			print(f"✅ \x1b[1;32m{name}\x1b[0m")
+			print(f"🦄 \x1b[1;32m{name}\x1b[0m")
 		else:
 			lambda_.update_function_configuration(
 				FunctionName=name,
@@ -75,12 +81,9 @@ def deploy():
 			)
 			lambda_.update_function_code(
 				FunctionName=name,
-				ZipFile=package(
-					function["includes"],
-					function.get("excludes", [])
-				).getvalue()
+				ZipFile=code
 			)
-			print(f"✅ {name}")
+			print(f"🦄 {name}")
 
 
 yaml.SafeLoader.add_constructor(
