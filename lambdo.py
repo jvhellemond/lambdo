@@ -34,6 +34,7 @@ def main():
 	parser = argparse.ArgumentParser(add_help=False)
 	parser.add_argument("names", nargs="*")
 	parser.add_argument("-c", "--config", default="lambdo.yaml")
+	parser.add_argument("-p", "--print", dest="print", action="store_true")
 	parser.add_argument("-d", "--deploy", dest="deploy", action="store_true")
 	parser.add_argument("-v", "--version", dest="version", action="store_true")
 	parser.add_argument("-a", "--alias", default=None)
@@ -44,6 +45,9 @@ def main():
 	config = yaml.safe_load(open(args.config, "r"))
 	exclude = lambda key: key.startswith("_") or (args.names and key not in args.names)
 	included = {key: value for key, value in config.items() if not exclude(key)}
+
+	if args.print:
+		return print(config)
 
 	# Retrieve a list of existing functions names:
 	client = boto3.client("lambda")
