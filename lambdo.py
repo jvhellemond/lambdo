@@ -83,7 +83,7 @@ def main():
 			print(f"✨ {name}:\x1b[1;34m{version['Version']}\x1b[0m")
 
 		if args.alias:
-			versions = [version["Version"] for version in client.list_versions_by_function(FunctionName=name)["Versions"]]
+			versions = [int(version["Version"]) for version in client.list_versions_by_function(FunctionName=name)["Versions"]]
 			version = "$LATEST" if args.latest else max(versions)
 			aliases = [alias["Name"] for alias in client.list_aliases(FunctionName=name)["Aliases"]]
 			params = {
