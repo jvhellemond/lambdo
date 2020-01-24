@@ -5,9 +5,7 @@ import boto3
 import datetime
 import glob2
 import io
-import operator
 import os
-import re
 import yaml
 import zipfile
 
@@ -32,21 +30,6 @@ def bundle(includes, excludes):
 	return bundled
 
 
-def resolve(value, context=None):
-	context = context or value
-	if isinstance(value, dict):
-		return {key: resolve(value_, context) for key, value_ in value.items()}
-	if isinstance(value, list):
-		return [resolve(value_, context) for value_ in value]
-	if isinstance(value, str):
-		return re.sub(
-			r"\$\{([^\}]+)\}",
-			lambda match: reduce(operator.getitem, match.group(1).split("."), context),
-			value
-		)
-	return value
-
-
 def main():
 
 	# Parse arguments:
@@ -61,7 +44,7 @@ def main():
 	parser.add_argument("-h", "--help")
 	args = parser.parse_args()
 
-	config = resolve(yaml.safe_load(open(args.config, "r")))
+	config = yaml.safe_load(open(args.config, "r"))
 	exclude = lambda key: key.startswith("_") or (args.names and key not in args.names)
 	included = {key: value for key, value in config.items() if not exclude(key)}
 
@@ -119,10 +102,8 @@ def main():
 
 
 yaml.SafeLoader.add_constructor(
-	"!include",
-	lambda loader, node: yaml.safe_load(
-		open(os.path.join(os.path.dirname(loader.name), node.value), "r")
-	)
+	"!env",
+	lambda loader, node: os.environ.get(node.value, "")
 )
 
 if __name__ == "__main__":
