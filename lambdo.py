@@ -103,7 +103,7 @@ def main():
 
 yaml.SafeLoader.add_constructor(
 	"!env",
-	lambda loader, node: os.environ.get(node.value, "")
+	lambda loader, node: os.getenv(node.value, "")
 )
 
 if __name__ == "__main__":
