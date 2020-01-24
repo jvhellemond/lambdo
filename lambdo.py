@@ -66,8 +66,8 @@ def main():
 				"Handler": function["handler"],
 				"Environment": {"Variables": function.get("env", {})},
 				"Layers": function.get("layers", []),
-				"Timeout": function.get("timeout", 3), # 3s = AWS Lambda default.
-				"MemorySize": function.get("memory", 128) # 128MB = AWS Lambda default.
+				"Timeout": function.get("timeout", 3), # 3 seconds = AWS Lambda default.
+				"MemorySize": function.get("memory", 128) # 128 MB = AWS Lambda default.
 			}
 			if name in functions:
 				client.update_function_configuration(**params)
