@@ -85,14 +85,14 @@ def main():
 			print(f"✨ {name}:\x1b[1;34m{version['Version']}\x1b[0m")
 
 		if args.alias:
-			versions = [int(version["Version"]) for version in client.list_versions_by_function(FunctionName=name)["Versions"]]
-			version = "$LATEST" if args.latest else max(versions)
-			aliases = [alias["Name"] for alias in client.list_aliases(FunctionName=name)["Aliases"]]
+			versions = [version["Version"] for version in client.list_versions_by_function(FunctionName=name)["Versions"]]
+			version = "$LATEST" if args.latest else sorted(versions, key=lambda i: i.zfill(9) if i.isnumeric() else i)[-1]
 			params = {
 				"Name": args.alias,
 				"FunctionName": name,
 				"FunctionVersion": version
 			}
+			aliases = [alias["Name"] for alias in client.list_aliases(FunctionName=name)["Aliases"]]
 			if args.alias in aliases:
 				client.update_alias(**params)
 				print(f"🔗 {name}:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
