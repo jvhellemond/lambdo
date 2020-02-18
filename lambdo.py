@@ -5,6 +5,7 @@ import boto3
 import datetime
 import glob2
 import io
+import json
 import os
 import yaml
 import zipfile
@@ -49,7 +50,7 @@ def main():
 	included = {key: value for key, value in config.items() if not exclude(key)}
 
 	if args.print:
-		return print(config)
+		return json.dumps(config, indent=2)
 
 	# Retrieve a list of existing functions names:
 	client = boto3.client("lambda")
@@ -75,6 +76,7 @@ def main():
 				print(f"🦄 {name}")
 			else:
 				client.create_function(**params, Code={"ZipFile": package})
+				# @todo: Add unqualified permissions here (if specified).
 				print(f"🦄 \x1b[1;32m{name}\x1b[0m")
 
 		if args.version:
@@ -82,6 +84,7 @@ def main():
 				FunctionName=name,
 				Description=datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 			)
+			# @todo: Add qualified permissions here (if specified).
 			print(f"✨ {name}:\x1b[1;34m{version['Version']}\x1b[0m")
 
 		if args.alias:
@@ -98,12 +101,18 @@ def main():
 				print(f"🔗 {name}:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
 			else:
 				client.create_alias(**params)
+				# @todo: Add qualified permissions here (if specified).
 				print(f"🔗 \x1b[1;32m{name}\x1b[0m:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
 
 
 yaml.SafeLoader.add_constructor(
 	"!env",
 	lambda loader, node: os.getenv(node.value, "")
+)
+
+yaml.SafeLoader.add_constructor(
+	"!concat",
+	lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)])
 )
 
 if __name__ == "__main__":
