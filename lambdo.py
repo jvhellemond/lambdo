@@ -50,7 +50,7 @@ def main():
 	included = {key: value for key, value in config.items() if not exclude(key)}
 
 	if args.print:
-		return json.dumps(config, indent=2)
+		return print(json.dumps(config, indent=2, sort_keys=True))
 
 	# Retrieve a list of existing functions names:
 	client = boto3.client("lambda")
@@ -76,7 +76,6 @@ def main():
 				print(f"🦄 {name}")
 			else:
 				client.create_function(**params, Code={"ZipFile": package})
-				# @todo: Add unqualified permissions here (if specified).
 				print(f"🦄 \x1b[1;32m{name}\x1b[0m")
 
 		if args.version:
@@ -84,7 +83,6 @@ def main():
 				FunctionName=name,
 				Description=datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
 			)
-			# @todo: Add qualified permissions here (if specified).
 			print(f"✨ {name}:\x1b[1;34m{version['Version']}\x1b[0m")
 
 		if args.alias:
@@ -101,7 +99,6 @@ def main():
 				print(f"🔗 {name}:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
 			else:
 				client.create_alias(**params)
-				# @todo: Add qualified permissions here (if specified).
 				print(f"🔗 \x1b[1;32m{name}\x1b[0m:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
 
 
