@@ -5,6 +5,7 @@ import boto3
 import datetime
 import glob2
 import io
+import itertools
 import json
 import os
 import yaml
@@ -107,6 +108,13 @@ yaml.SafeLoader.add_constructor(
 	lambda loader, node: os.getenv(node.value, "")
 )
 
+# Chain a list of (shallow) lists:
+yaml.SafeLoader.add_constructor(
+	"!chain",
+	lambda loader, node: list(itertools.chain(*[loader.construct_sequence(i) for i in node.value]))
+)
+
+# Concatenate  a list of strings:
 yaml.SafeLoader.add_constructor(
 	"!concat",
 	lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)])
