@@ -65,9 +65,9 @@ def main():
 				"FunctionName": name,
 				"Role": function["role"],
 				"Runtime": function["runtime"],
-				"Handler": function["handler"],
-				"Environment": {"Variables": function.get("env", {})},
 				"Layers": function.get("layers", []),
+				"Environment": {"Variables": function.get("env", {})},
+				"Handler": function["handler"],
 				"Timeout": function.get("timeout", 3), # 3 seconds = AWS Lambda default.
 				"MemorySize": function.get("memory", 128) # 128 MB = AWS Lambda default.
 			}

@@ -1,5 +1,6 @@
 from setuptools import setup
 
+# @todo: Add lots of package meta information.
 setup(
 	name="lambdo",
 	description="Just lambdo it",
