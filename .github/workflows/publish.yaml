@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
   release:
     types:
-      - created
+      - released
 jobs:
   publish:
     name: Publish on PyPI
