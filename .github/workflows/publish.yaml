@@ -15,6 +15,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: "3.8"
+    - name: Install dependencies
+      run: pip install setuptools twine wheel
     - name: Build and publish
       env:
         TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
