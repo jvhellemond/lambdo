@@ -18,8 +18,8 @@ setup(
 	author="Jan van Hellemond",
 	author_email="jvhellemond@gmail.com",
 	url="https://github.com/jvhellemond/lambdo",
-	version="5.7.2",
+	version="5.8.3",
 	install_requires=["boto3", "glob2", "PyYAML"],
 	py_modules=["lambdo"],
-	entry_points={"console_scripts": ["lambdo=lambdo:main"]}
+	entry_points={"console_scripts": ["lambdo=lambdo:just_lambdo_it"]}
 )

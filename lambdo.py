@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 
+# @todo: Maybe remove glob2, as glob now (Python 3.5+) does `**/` matching.
+# @todo: Standardize output colors.
+
 import argparse
 import boto3
 import datetime
@@ -19,7 +22,9 @@ def paths(patterns, root=""):
 		os.path.join(root, pattern),
 		include_hidden=True
 	) for pattern in patterns]
-	return [path for paths in globbed for path in paths if not os.path.isdir(path)]
+	return [
+		path for paths in globbed for path in paths if not os.path.isdir(path)
+	]
 
 
 def bundle(includes, excludes):
@@ -32,7 +37,7 @@ def bundle(includes, excludes):
 	return bundled
 
 
-def main():
+def just_lambdo_it():
 
 	# Parse arguments:
 	parser = argparse.ArgumentParser(add_help=False)
@@ -55,12 +60,18 @@ def main():
 
 	# Retrieve a list of existing functions names:
 	client = boto3.client("lambda")
-	functions = [function["FunctionName"] for function in client.list_functions()["Functions"]]
+	functions = [
+		function["FunctionName"]
+		for function in client.list_functions()["Functions"]
+	]
 
 	for name, function in included.items():
 
 		if args.deploy:
-			package = bundle(function["includes"], function.get("excludes", [])).getvalue()
+			package = bundle(
+				function["includes"],
+				function.get("excludes", [])
+			).getvalue()
 			params = {
 				"FunctionName": name,
 				"Role": function["role"],
@@ -74,33 +85,47 @@ def main():
 			if name in functions:
 				client.update_function_configuration(**params)
 				client.update_function_code(FunctionName=name, ZipFile=package)
-				print(f"🦄 {name}")
+				print(f"Updated function: {name}")
 			else:
 				client.create_function(**params, Code={"ZipFile": package})
-				print(f"🦄 \x1b[1;32m{name}\x1b[0m")
+				print(f"Created function: \x1b[1;32m{name}\x1b[0m")
 
 		if args.version:
 			version = client.publish_version(
 				FunctionName=name,
 				Description=datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-			)
-			print(f"✨ {name}:\x1b[1;34m{version['Version']}\x1b[0m")
+			)["Version"]
+			print(f"Published function version: \x1b[1;32m{name}:{version}\x1b[0m")
 
 		if args.alias:
-			versions = [version["Version"] for version in client.list_versions_by_function(FunctionName=name)["Versions"]]
-			version = "$LATEST" if args.latest else sorted(versions, key=lambda i: i.zfill(9) if i.isnumeric() else i)[-1]
+			versions = [
+				version["Version"]
+				for version
+				in client.list_versions_by_function(FunctionName=name)["Versions"]
+			]
+			version = (
+				"$LATEST"
+				if args.latest
+				else sorted(
+					versions,
+					key=lambda i: i.zfill(9) if i.isnumeric() else i
+				)[-1]
+			)
 			params = {
 				"Name": args.alias,
 				"FunctionName": name,
 				"FunctionVersion": version
 			}
-			aliases = [alias["Name"] for alias in client.list_aliases(FunctionName=name)["Aliases"]]
+			aliases = [
+				alias["Name"]
+				for alias in client.list_aliases(FunctionName=name)["Aliases"]
+			]
 			if args.alias in aliases:
 				client.update_alias(**params)
-				print(f"🔗 {name}:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
+				print(f"Updated function alias: {name}:\x1b[1;34m{args.alias}\x1b[0m → ~:{version}")
 			else:
 				client.create_alias(**params)
-				print(f"🔗 \x1b[1;32m{name}\x1b[0m:\x1b[1;34m{args.alias}\x1b[0m → {name}:\x1b[1;34m{version}\x1b[0m")
+				print(f"Created function alias: \x1b[1;32m{name}\x1b[0m:\x1b[1;34m{args.alias}\x1b[0m → ~:{version}")
 
 
 yaml.SafeLoader.add_constructor(
@@ -108,17 +133,19 @@ yaml.SafeLoader.add_constructor(
 	lambda loader, node: os.getenv(node.value, "")
 )
 
-# Chain a list of (shallow) lists:
 yaml.SafeLoader.add_constructor(
 	"!chain",
-	lambda loader, node: list(itertools.chain(*[loader.construct_sequence(i) for i in node.value]))
+	lambda loader, node: list(
+		itertools.chain(*[loader.construct_sequence(i) for i in node.value])
+	)
 )
 
-# Concatenate  a list of strings:
 yaml.SafeLoader.add_constructor(
 	"!concat",
-	lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)])
+	lambda loader, node: "".join(
+		[str(i) for i in loader.construct_sequence(node)]
+	)
 )
 
 if __name__ == "__main__":
-	main()
+	just_lambdo_it()
