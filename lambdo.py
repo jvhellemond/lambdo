@@ -18,13 +18,8 @@ from functools import reduce
 
 
 def paths(patterns, root=""):
-	globbed = [glob2.glob(
-		os.path.join(root, pattern),
-		include_hidden=True
-	) for pattern in patterns]
-	return [
-		path for paths in globbed for path in paths if not os.path.isdir(path)
-	]
+	globbed = [glob2.glob(os.path.join(root, pattern), include_hidden=True) for pattern in patterns]
+	return [path for paths in globbed for path in paths if not os.path.isdir(path)]
 
 
 def bundle(includes, excludes):
@@ -60,27 +55,21 @@ def just_lambdo_it():
 
 	# Retrieve a list of existing functions names:
 	client = boto3.client("lambda")
-	functions = [
-		function["FunctionName"]
-		for function in client.list_functions()["Functions"]
-	]
+	functions = [function["FunctionName"] for function in client.list_functions()["Functions"]]
 
-	for name, function in included.items():
+	for name, options in included.items():
 
 		if args.deploy:
-			package = bundle(
-				function["includes"],
-				function.get("excludes", [])
-			).getvalue()
+			package = bundle(options["includes"], options.get("excludes", [])).getvalue()
 			params = {
 				"FunctionName": name,
-				"Role": function["role"],
-				"Runtime": function["runtime"],
-				"Layers": function.get("layers", []),
-				"Environment": {"Variables": function.get("env", {})},
-				"Handler": function["handler"],
-				"Timeout": function.get("timeout", 3), # 3 seconds = AWS Lambda default.
-				"MemorySize": function.get("memory", 128) # 128 MB = AWS Lambda default.
+				"Role":         options["role"],
+				"Runtime":      options["runtime"],
+				"Handler":      options["handler"],
+				"Layers":       options.get("layers", []),
+				"Timeout":      options.get("timeout", 3), # 3 seconds = AWS Lambda default.
+				"MemorySize":   options.get("memory", 128), # 128 MB = AWS Lambda default.
+				"Environment":  {"Variables": options.get("env", {})}
 			}
 			if name in functions:
 				client.update_function_configuration(**params)
@@ -91,35 +80,26 @@ def just_lambdo_it():
 				print(f"Created function: \x1b[1;32m{name}\x1b[0m")
 
 		if args.version:
-			version = client.publish_version(
-				FunctionName=name,
-				Description=datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-			)["Version"]
+			description = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
+			version = client.publish_version(FunctionName=name, Description=description)["Version"]
 			print(f"Published function version: \x1b[1;32m{name}:{version}\x1b[0m")
 
 		if args.alias:
 			versions = [
 				version["Version"]
-				for version
-				in client.list_versions_by_function(FunctionName=name)["Versions"]
+				for version in client.list_versions_by_function(FunctionName=name)["Versions"]
 			]
 			version = (
 				"$LATEST"
 				if args.latest
-				else sorted(
-					versions,
-					key=lambda i: i.zfill(9) if i.isnumeric() else i
-				)[-1]
+				else sorted(versions, key=lambda i: i.zfill(9) if i.isnumeric() else i)[-1]
 			)
 			params = {
 				"Name": args.alias,
 				"FunctionName": name,
 				"FunctionVersion": version
 			}
-			aliases = [
-				alias["Name"]
-				for alias in client.list_aliases(FunctionName=name)["Aliases"]
-			]
+			aliases = [alias["Name"] for alias in client.list_aliases(FunctionName=name)["Aliases"]]
 			if args.alias in aliases:
 				client.update_alias(**params)
 				print(f"Updated function alias: {name}:\x1b[1;34m{args.alias}\x1b[0m → ~:{version}")
@@ -128,23 +108,16 @@ def just_lambdo_it():
 				print(f"Created function alias: \x1b[1;32m{name}\x1b[0m:\x1b[1;34m{args.alias}\x1b[0m → ~:{version}")
 
 
-yaml.SafeLoader.add_constructor(
-	"!env",
-	lambda loader, node: os.getenv(node.value, "")
-)
+yaml.SafeLoader.add_constructor("!env", lambda loader, node: os.getenv(node.value, ""))
 
 yaml.SafeLoader.add_constructor(
 	"!chain",
-	lambda loader, node: list(
-		itertools.chain(*[loader.construct_sequence(i) for i in node.value])
-	)
+	lambda loader, node: list(itertools.chain(*[loader.construct_sequence(i) for i in node.value]))
 )
 
 yaml.SafeLoader.add_constructor(
 	"!concat",
-	lambda loader, node: "".join(
-		[str(i) for i in loader.construct_sequence(node)]
-	)
+	lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)])
 )
 
 if __name__ == "__main__":
