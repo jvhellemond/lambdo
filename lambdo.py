@@ -17,6 +17,11 @@ import zipfile
 from functools import reduce
 
 
+def load(path, names=None):
+	exclude = lambda key: key.startswith("_") or (names and key not in names)
+	return {key: value for key, value in yaml.safe_load(open(path, "r")).items() if not exclude(key)}
+
+
 def paths(patterns, root=""):
 	globbed = [glob2.glob(os.path.join(root, pattern), include_hidden=True) for pattern in patterns]
 	return [path for paths in globbed for path in paths if not os.path.isdir(path)]
@@ -46,9 +51,7 @@ def just_lambdo_it():
 	parser.add_argument("-h", "--help")
 	args = parser.parse_args()
 
-	config = yaml.safe_load(open(args.config, "r"))
-	exclude = lambda key: key.startswith("_") or (args.names and key not in args.names)
-	included = {key: value for key, value in config.items() if not exclude(key)}
+	config = load(args.config, args.names)
 
 	if args.print:
 		return print(json.dumps(config, indent=2, sort_keys=True))
@@ -57,7 +60,7 @@ def just_lambdo_it():
 	client = boto3.client("lambda")
 	functions = [function["FunctionName"] for function in client.list_functions()["Functions"]]
 
-	for name, options in included.items():
+	for name, options in config.items():
 
 		if args.deploy:
 			package = bundle(options["includes"], options.get("excludes", [])).getvalue()
