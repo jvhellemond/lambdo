@@ -1,5 +1,3 @@
-# Update to use Poetry and add binaries to the release on GitHub.
-
 name: Publish on PyPI
 on:
   workflow_dispatch:
@@ -11,18 +9,16 @@ jobs:
     name: Publish on PyPI
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v2
-    - name: Set up Python
-      uses: actions/setup-python@v2
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v2
       with:
         python-version: "3.9"
-    - name: Install dependencies
-      run: pip install setuptools twine wheel
     - name: Build and publish
       env:
-        TWINE_USERNAME: ${{ secrets.PYPI_USERNAME }}
-        TWINE_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
+        PYPI_USERNAME: ${{ secrets.PYPI_USERNAME }}
+        PYPI_PASSWORD: ${{ secrets.PYPI_PASSWORD }}
       run: |
-        python setup.py sdist bdist_wheel
-        twine upload dist/*
+        pip install poetry
+        poetry build -f wheel
+        poetry publish -u $PYPI_USERNAME -p $PYPI_PASSWORD
+      # @todo: Add artifacts from /dist to this GitHub release.
