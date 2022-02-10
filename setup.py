@@ -16,9 +16,9 @@ setup(
 	description="Just lambdo it",
 	long_description=inspect.cleandoc(description),
 	author="Jan van Hellemond",
-	author_email="jvhellemond@gmail.com",
+	author_email="jan@jvhellemond.nl",
 	url="https://github.com/jvhellemond/lambdo",
-	version="6.2.2",
+	version="6.2.3",
 	install_requires=["boto3", "glob2", "PyYAML"],
 	py_modules=["lambdo"],
 	entry_points={"console_scripts": ["lambdo=lambdo:just_lambdo_it"]}
