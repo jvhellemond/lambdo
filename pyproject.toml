@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "lambdo"
+version = "6.2.3"
+description = "Humor is the only test of gravity, and gravity of humor; for a subject which will not bear raillery is suspicious, and a jest which will not bear serious examination is false wit."
+authors = ["Jan van Hellemond <jan@jvhellemond.nl>"]
+homepage = "https://github.com/jvhellemond/lambdo"
+repository = "https://github.com/jvhellemond/lambdo"
+
+[tool.poetry.dependencies]
+python = "^3.9"
+boto3 = "^1.20.52"
+glob2 = "^0.7"
+PyYAML = "^6.0"
+
+[tool.poetry.scripts]
+lambdo = "lambdo:just_lambdo_it"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

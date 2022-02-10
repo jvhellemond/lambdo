@@ -1,3 +1,5 @@
+# Update to use Poetry and add binaries to the release on GitHub.
+
 name: Publish on PyPI
 on:
   workflow_dispatch:
