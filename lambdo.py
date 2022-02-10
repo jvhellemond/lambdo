@@ -8,7 +8,6 @@ import boto3
 import datetime
 import glob2
 import io
-import itertools
 import json
 import os
 import yaml
@@ -112,16 +111,7 @@ def just_lambdo_it():
 
 
 yaml.SafeLoader.add_constructor("!env", lambda loader, node: os.getenv(node.value, ""))
-
-yaml.SafeLoader.add_constructor(
-	"!chain",
-	lambda loader, node: list(itertools.chain(*[loader.construct_sequence(i) for i in node.value]))
-)
-
-yaml.SafeLoader.add_constructor(
-	"!concat",
-	lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)])
-)
+yaml.SafeLoader.add_constructor("!join", lambda loader, node: "".join([str(i) for i in loader.construct_sequence(node)]))
 
 if __name__ == "__main__":
 	just_lambdo_it()
