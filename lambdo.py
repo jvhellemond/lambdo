@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 # @todo: Maybe remove glob2, as glob now (Python 3.5+) does `**/` matching.
-# @todo: Standardize output colors.
 
 import argparse
 import boto3
@@ -74,11 +73,17 @@ def just_lambdo_it():
 				"Environment":  {"Variables": options.get("env", {})}
 			}
 			if name in functions:
-				client.update_function_configuration(**params)
+				response = client.update_function_configuration(**params)
+
+				# @todo: Wait for function state "InProgress" to pass here.
+				# @debug:
+				print(response["State"], response["StateReason"])
+
 				client.update_function_code(FunctionName=name, ZipFile=package)
 				print(f"Updated function: {name}")
 			else:
 				client.create_function(**params, Code={"ZipFile": package})
+				# @todo: Wait for function state "Pending" to pass here.
 				print(f"Created function: \x1b[1;32m{name}\x1b[0m")
 
 		if args.version:
